@@ -76,64 +76,103 @@ npm --version
 nginx -v
 ```
 
-### 2. Deploy Application
+### 2. Server Setup and Deployment
 
-1. Clone the repository on the server:
-```bash
-cd /var/www
-sudo git clone <repository-url>
-cd <repository-name>
-```
+#### Basic Server Setup
 
-2. Install dependencies and build:
-```bash
-sudo npm install
-sudo npm run build
-```
+1. Connect to your server:
+   ```bash
+   ssh root@<SERVER_IP>
+   ```
 
-### 3. Configure Nginx
+2. Install and configure Nginx:
+   ```bash
+   sudo apt update
+   sudo apt install nginx -y
+   sudo systemctl start nginx
+   sudo systemctl enable nginx
+   ```
 
-1. Create a new Nginx configuration file:
-```bash
-sudo nano /etc/nginx/sites-available/currency-exchange
-```
+3. Set proper permissions for the web directory:
+   ```bash
+   sudo chown -R "$USER":"$USER" /var/www/html
+   sudo chmod -R 755 /var/www
+   ```
 
-2. Add the following configuration:
-```nginx
-server {
-    listen 80;
-    server_name your-domain.com;  # Replace with your domain
+#### Application Deployment
 
-    root /var/www/<repository-name>/dist;
-    index index.html;
+1. On your local machine, zip the build files:
+   ```bash
+   zip -r dist.zip dist/
+   ```
 
-    location / {
-        try_files $uri $uri/ /index.html;
-    }
-}
-```
+2. Transfer the zip file to the server:
+   ```bash
+   scp -i ~/.ssh/id_ed25519 dist.zip ubuntu@<SERVER_IP>:/var/www/html/
+   ```
 
-3. Enable the site and restart Nginx:
-```bash
-sudo ln -s /etc/nginx/sites-available/currency-exchange /etc/nginx/sites-enabled/
-sudo nginx -t
-sudo systemctl restart nginx
-```
+3. On the server, unzip and deploy the files:
+   ```bash
+   sudo apt-get install unzip
+   cd /var/www/html
+   unzip dist.zip
+   sudo mv dist/* .
+   ```
 
-### 4. SSL Configuration (Optional but Recommended)
+4. Configure firewall:
+   ```bash
+   sudo apt install ufw
+   sudo ufw allow 'Nginx HTTP'
+   ```
 
-Install Certbot and obtain SSL certificate:
+### 3. Load Balancer Setup (Optional)
 
-```bash
-sudo apt install certbot python3-certbot-nginx
-sudo certbot --nginx -d your-domain.com
-```
+If you need to set up load balancing across multiple servers, follow these steps:
 
-## Environment Variables
+1. Access the load balancer server:
+   ```bash
+   ssh root@<LOAD_BALANCER_IP>
+   ```
 
-The application uses the following environment variables:
-- None required for basic functionality
-- API calls are made to `exchangerate-api.com` which is free and doesn't require authentication
+2. Install required tools:
+   ```bash
+   sudo apt-get install nano nginx -y
+   ```
+
+3. Configure Nginx for load balancing:
+   ```bash
+   sudo nano /etc/nginx/conf.d/load-balancer.conf
+   ```
+
+4. Add the following configuration:
+   ```nginx
+   upstream webservers {
+       server <WEB_SERVER_1_IP>;
+       server <WEB_SERVER_2_IP>;
+   }
+
+   server {
+       listen 80;
+       server_name <LOAD_BALANCER_IP>;
+
+       location / {
+           proxy_pass http://webservers;
+           proxy_set_header Host $host;
+           proxy_set_header X-Real-IP $remote_addr;
+           proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+       }
+   }
+   ```
+
+5. Test and apply the configuration:
+   ```bash
+   sudo nginx -t
+   sudo systemctl restart nginx
+   ```
+
+> **Note:** Replace `<SERVER_IP>`, `<LOAD_BALANCER_IP>`, `<WEB_SERVER_1_IP>`, and `<WEB_SERVER_2_IP>` with your actual server IP addresses.
+
+> **Security Tip:** It's recommended to use SSH keys instead of password authentication for server access. Make sure your firewall rules are properly configured before exposing services to the internet.
 
 ## Contributing
 
