@@ -173,15 +173,3 @@ If you need to set up load balancing across multiple servers, follow these steps
 > **Note:** Replace `<SERVER_IP>`, `<LOAD_BALANCER_IP>`, `<WEB_SERVER_1_IP>`, and `<WEB_SERVER_2_IP>` with your actual server IP addresses.
 
 > **Security Tip:** It's recommended to use SSH keys instead of password authentication for server access. Make sure your firewall rules are properly configured before exposing services to the internet.
-
-## Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
